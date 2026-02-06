@@ -74,3 +74,4 @@ async function startGame() {
 
 // Автозапуск
 startGame();
+Module.callMain(Module.arguments || []);
