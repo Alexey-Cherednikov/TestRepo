@@ -1,5 +1,3 @@
-// loader.js — распаковка .wasm.gz и .data.gz одной функцией
-
 async function loadGz(url) {
   const resp = await fetch(url);
   if (!resp.ok) throw new Error(`Ошибка загрузки ${url}`);
@@ -37,7 +35,6 @@ async function startGame() {
 
     // Запускаем оригинальный загрузчик UE4
     await loadScript("Stingracer-HTML5-Shipping.UE4.js");
-
     document.body.innerHTML = "<h1>Готово!</h1>";
   } catch (e) {
     console.error(e);
