@@ -20,6 +20,7 @@
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
 	<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
 
+	<link href="AtTheGate-HTML5-Shipping.css" rel="stylesheet">
 </head>
 <body>
 
@@ -42,21 +43,6 @@
 </div>
 <div class="texthalf text-normal jumbotron " id="logwindow" style='display:none'></div>
 
-<script>
-var Module = {};
-
-const originalFetch = window.fetch;
-
-window.fetch = async function(resource, options) {
-    if (resource.endsWith(".gz")) {
-        const response = await originalFetch(resource, options);
-        const ds = new DecompressionStream("gzip");
-        const decompressedStream = response.body.pipeThrough(ds);
-        const buffer = await new Response(decompressedStream).arrayBuffer();
-        return new Response(buffer);
-    }
-    return originalFetch(resource, options);
-};
-</script><script src="AtTheGate-HTML5-Shipping.UE4.js"></script>
+<script src="AtTheGate-HTML5-Shipping.UE4.js"></script>
 </body>
 </html>
