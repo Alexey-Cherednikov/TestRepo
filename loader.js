@@ -1,4 +1,4 @@
-// loader.js — загрузка и распаковка .wasm.gz и .data.gz
+// loader.js
 
 async function fetchGz(url) {
   const resp = await fetch(url);
@@ -11,47 +11,40 @@ async function fetchGz(url) {
   return await new Response(stream).arrayBuffer();
 }
 
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = false;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error(`Не удалось загрузить ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
 async function startGame() {
   const status = document.getElementById("status") || document.body;
   status.innerHTML = "Загрузка и распаковка файлов... (10–40 сек)";
 
   try {
-    // 1. Распаковываем .wasm.gz
     const wasmBuffer = await fetchGz("Stingracer-HTML5-Shipping.wasm.gz");
     console.log("WASM распакован");
 
-    // 2. Распаковываем .data.gz (если есть)
     let dataBuffer = null;
     try {
       dataBuffer = await fetchGz("Stingracer-HTML5-Shipping.data.gz");
       console.log("Data распакован");
     } catch (e) {
-      console.log("Файл .data.gz не найден, продолжаем без него");
+      console.log("Нет .data.gz, продолжаем");
     }
 
-    // 3. Загружаем основной UE4 скрипт
-    const ueScript = document.createElement("script");
-    ueScript.src = "Stingracer-HTML5-Shipping.UE4.js";
-    ueScript.async = false;
-    document.head.appendChild(ueScript);
-
-    // Ждём загрузки скрипта
-    await new Promise(resolve => ueScript.onload = resolve);
+    await loadScript("Stingracer-HTML5-Shipping.UE4.js");
     console.log("UE4 скрипт загружен");
 
-    // 4. Подменяем WASM (Module['wasmDownloadAction'])
-    Module['wasmDownloadAction'] = Promise.resolve({ wasmBytes: new Uint8Array(wasmBuffer) });
-
-    // 5. Подменяем .data (Module['preloadedPackages'])
-    if (dataBuffer) {
-      Module['preloadedPackages'] = {};
-      Module['preloadedPackages'][Module.locateFile('Stingracer-HTML5-Shipping.data')] = new Uint8Array(dataBuffer);
-    }
-
-    // 6. Ждём, пока UE4 сам запустит всё (Downloading(), postRun и т.д.)
+    // Ждём, пока UE4 создаст Module
     await new Promise(resolve => {
       const check = () => {
-        if (Module['wasmInstantiateActionResolve'] && Module['preloadedPackages']) {
+        if (window.Module) {
           resolve();
         } else {
           setTimeout(check, 100);
@@ -59,19 +52,26 @@ async function startGame() {
       };
       check();
     });
-    console.log("UE4 Module готов");
+    console.log("Module создан");
 
-    // 7. Запускаем игру (если нужно вручную — UE4 сам запускает postRun)
-    // Если не стартует — добавь Module.callMain([]); или Module._main();
-    // Но в твоём коде UE4 запускается автоматически через Downloading()
+    // Подменяем wasm и data
+    Module['wasmDownloadAction'] = Promise.resolve({ wasmBytes: new Uint8Array(wasmBuffer) });
+
+    if (dataBuffer) {
+      Module['preloadedPackages'] = {};
+      Module['preloadedPackages'][Module.locateFile('Stingracer-HTML5-Shipping.UE4.data')] = new Uint8Array(dataBuffer);
+    }
+
+    // Запускаем игру
+    Module.callMain(Module.arguments || []);
+    console.log("callMain выполнен");
 
     status.innerHTML = "Игра запущена!";
   } catch (e) {
     console.error("Ошибка:", e);
-    status.innerHTML = `<strong>Ошибка:</strong><br>${e.message}<br>Обновите страницу.`;
+    status.innerHTML = `<strong>Ошибка:</strong><br>${e.message}`;
   }
 }
 
 // Автозапуск
 startGame();
-Module.callMain(Module.arguments || []);
