@@ -173,6 +173,6 @@ Module['FS_createPath']('/Stingracer/Content', 'Paks', true, true);
   }
 
  }
- loadPackage({"files": [{"start": 0, "audio": 0, "end": 53, "filename": "/Manifest_NonUFSFiles_HTML5.txt"}, {"start": 53, "audio": 0, "end": 93, "filename": "/UE4CommandLine.txt"}, {"start": 93, "audio": 0, "end": 49121089, "filename": "/Stingracer/Content/Paks/Stingracer-HTML5.pak"}], "remote_package_size": 49121089, "package_uuid": "767f5296-eb3c-4d8e-94b6-7d2886d5422a"});
+ loadPackage({"files": [{"start": 0, "audio": 0, "end": 53, "filename": "/Manifest_NonUFSFiles_HTML5.txt"}, {"start": 53, "audio": 0, "end": 93, "filename": "/UE4CommandLine.txt"}, {"start": 93, "audio": 0, "end": 49117677, "filename": "/Stingracer/Content/Paks/Stingracer-HTML5.pak"}], "remote_package_size": 49117677, "package_uuid": "0e90188f-6ca2-451b-a8e0-6c6f441844d0"});
 
 })();

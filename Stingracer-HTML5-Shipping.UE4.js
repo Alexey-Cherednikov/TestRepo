@@ -207,9 +207,7 @@ function detectWebGL() {
 		}
 	} finally {
 		canvas.removeEventListener("webglcontextcreationerror", testError, false);
-		if ( targetOffscreenCanvas ) {
-			delete canvas;
-		}
+		
 	}
 	return 0;
 }
