@@ -14,8 +14,8 @@ async function startGame() {
   document.body.innerHTML = "<h1>Загрузка...</h1><p>Распаковка файлов (10–40 сек)</p>";
 
   try {
-    const wasmBuffer = await loadGz("Stingracer-HTML5-Shipping.UE4.wasm.gz");
-    const dataBuffer = await loadGz("Stingracer-HTML5-Shipping.UE4.data.gz");
+    const wasmBuffer = await loadGz("Stingracer-HTML5-Shipping.wasm.gz");
+    const dataBuffer = await loadGz("Stingracer-HTML5-Shipping.data.gz");
 
     // Передаём распакованные файлы в UE4 loader (как будто это обычные файлы)
     window.Module = {
@@ -30,11 +30,11 @@ async function startGame() {
 
     // Создаём виртуальные файлы в Emscripten FS
     FS.createPath("/", "data", true, true);
-    FS.createDataFile("/", "Stingracer-HTML5-Shipping.UE4.wasm", new Uint8Array(wasmBuffer), true, false);
-    FS.createDataFile("/", "Stingracer-HTML5-Shipping.UE4.data", new Uint8Array(dataBuffer), true, false);
+    FS.createDataFile("/", "Stingracer-HTML5-Shipping.wasm", new Uint8Array(wasmBuffer), true, false);
+    FS.createDataFile("/", "Stingracer-HTML5-Shipping.data", new Uint8Array(dataBuffer), true, false);
 
     // Запускаем оригинальный загрузчик UE4
-    await loadScript("Stingracer-HTML5-Shipping.UE4.js");
+    await loadScript("Stingracer-HTML5-Shipping.js");
     document.body.innerHTML = "<h1>Готово!</h1>";
   } catch (e) {
     console.error(e);
