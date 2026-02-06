@@ -34,7 +34,7 @@ async function startGame() {
     FS.createDataFile("/", "Stingracer-HTML5-Shipping.data", new Uint8Array(dataBuffer), true, false);
 
     // Запускаем оригинальный загрузчик UE4
-    await loadScript("Stingracer-HTML5-Shipping.js");
+    await loadScript("Stingracer-HTML5-Shipping.UE4.js");
     document.body.innerHTML = "<h1>Готово!</h1>";
   } catch (e) {
     console.error(e);
