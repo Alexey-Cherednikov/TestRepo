@@ -58,7 +58,7 @@ if ( AudioContext ) {
 const requiredWebGLVersion = 1;
 const targetOffscreenCanvas = false;
 const explicitlyUseWebGL1 = (location.search.indexOf('webgl1') != -1);
-const serveCompressedAssets = false;
+const serveCompressedAssets = true;
 console.log("Emscripten version: 1.38.31");
 console.log("Emscripten configuration: ");
 
