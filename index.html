@@ -43,6 +43,20 @@
 </div>
 <div class="texthalf text-normal jumbotron " id="logwindow" style='display:none'></div>
 
+<script>
+var Module = {};
+
+Module.instantiateWasm = async function(imports, successCallback) {
+    const response = await fetch("AtTheGate-HTML5-Shipping.wasm.gz");
+
+    const ds = new DecompressionStream("gzip");
+    const decompressedStream = response.body.pipeThrough(ds);
+    const buffer = await new Response(decompressedStream).arrayBuffer();
+
+    const result = await WebAssembly.instantiate(buffer, imports);
+    successCallback(result.instance);
+};
+</script>
 <script src="AtTheGate-HTML5-Shipping.UE4.js"></script>
 </body>
 </html>
