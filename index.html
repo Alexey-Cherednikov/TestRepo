@@ -2,23 +2,37 @@
 
 <html lang="en">
 <head>
-<title>Stingracer</title>
-<link rel="icon" href="data:;base64,iVBORw0KGgo=">
+<title>AtTheGate</title>
+<meta charset="utf-8">
 </head>
-<body style="margin: 0; padding: 0; background: #000000; overflow: hidden;">
-    
-<!-- loading-screen-->
-<div class="loading-container" id="loading-screen" style = "position: absolute; top: 50%; left: 50%;" >
-<div><h3 class="loading-text" style="font-family: monospace; font-size: 20px; color: white;">LOADING</h3></div>
-</div>
-    
-<!-- Viewport--> 
-<div class="wrapper" id="mainarea">
-<div id='loadTasks'> </div>
-<canvas tabindex=0 id="canvas" oncontextmenu= "return false;" class="emscripten" style="display: none; overflow: hidden; min-height: 100vh; min-width: 100vw; "></canvas>
-<div id="fullscreen_request"></div>
-</div>
-	
-<script src="Stingracer-HTML5-Shipping.UE4.js"></script>
+
+<body style="margin: 0; padding: 0; background: #000000;">
+
+  
+  <!-- Экран загрузки-->
+  <div class="loading-container" id="loading-screen" 
+    style = " width: 30%; height: 30%; 
+    z-index: 9999; 
+    position: absolute; top: 50%; left: 50%; 
+    transform: translate(-50%, -50%); 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
+    transition: opacity 1s ease;">
+    <img src="AtTheGate_Splash_01.png"  style=" width: 100%; height:auto;">
+    <img src="AtTheGate_LoadingBar.gif"  style=" width: 100%; height:auto;" >
+    <div><h3 class="loading-text" style="font-family: monospace; font-size: 20px; color: white;">LOADING</h3></div>
+  </div>
+  
+  <!-- Вьюпорт игры -->
+  <div class="wrapper" id="mainarea">
+  <div id='loadTasks'> </div>
+  <canvas tabindex=0 id="canvas" oncontextmenu= "return false;" class="emscripten" style="display: none; min-height: 100vh; min-width: 100vw; "></canvas>
+  <div id="fullscreen_request"></div>
+  </div>
+
+  <script src="AtTheGate-HTML5-Shipping.UE4.js"></script>
+
 </body>
 </html>
