@@ -1,4 +1,5 @@
-﻿// ======== функция отключения звука и остановки игры на паузу ====================================================
+
+// ======== функция отключения звука и остановки игры на паузу ====================================================
 (function() {
     const OriginalAudioContext = window.AudioContext;
     window.AudioContext = function(...args) {
@@ -208,7 +209,7 @@ function detectWebGL() {
 	} finally {
 		canvas.removeEventListener("webglcontextcreationerror", testError, false);
 		if ( targetOffscreenCanvas ) {
-			delete canvas;
+			delete 'canvas';
 		}
 	}
 	return 0;

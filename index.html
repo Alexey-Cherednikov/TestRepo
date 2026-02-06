@@ -19,43 +19,6 @@
 <div id="fullscreen_request"></div>
 </div>
 	
-
-<script type="module">
-async function loadWasm() {
-    const gzUrl = "Stingracer-HTML5-Shipping.wasm.gz";
-
-    try {
-    const response = await fetch(gzUrl);
-    if (!response.ok) throw new Error("Не удалось загрузить .gz");
-
-    const compressed = await response.arrayBuffer();
-
-    // Распаковываем gzip вручную
-    const ds = new DecompressionStream("gzip");
-    const decompressedStream = new Response(compressed).body.pipeThrough(ds);
-    const decompressed = await new Response(decompressedStream).arrayBuffer();
-
-    // Запускаем WASM
-    const module = await WebAssembly.instantiateStreaming(
-        new Response(decompressed),
-        importObject // ← замени на свой importObject, если есть
-    );
-
-    document.getElementById("status").textContent = "Готово! Игра запущена.";
-    // Дальше твой код запуска игры
-    // module.instance.exports.startGame(); или что у тебя там
-
-    } catch (e) {
-    console.error("Ошибка загрузки WASM", e);
-    document.getElementById("status").innerHTML = 
-        "Ошибка загрузки.<br>Попробуйте обновить страницу или используйте другой браузер.";
-    }
-}
-
-loadWasm();
-</script>
-
-
-<script src="Stingracer-HTML5-Shipping.UE4.js"></script>
+<script type="module" src="loader.js"></script>
 </body>
 </html>
