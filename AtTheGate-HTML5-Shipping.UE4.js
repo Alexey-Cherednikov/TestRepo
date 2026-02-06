@@ -208,7 +208,7 @@ function detectWebGL() {
 	} finally {
 		canvas.removeEventListener("webglcontextcreationerror", testError, false);
 		if ( targetOffscreenCanvas ) {
-			delete 'canvas';
+			delete canvas;
 		}
 	}
 	return 0;
@@ -865,7 +865,7 @@ document.addEventListener("DOMContentLoaded", function( ) {
 		// ----------------------------------------
 		// ----------------------------------------
 		// WASM
-		var mainCompiledCode = download(Module.locateFile('AtTheGate-HTML5-Shipping.wasm'), 'arraybuffer').then(function(wasmBytes) {
+		var mainCompiledCode = download(Module.locateFile('UE4Game-HTML5-Shipping.wasm'), 'arraybuffer').then(function(wasmBytes) {
     	return { wasmBytes: wasmBytes };
 		});
 		Module['wasmDownloadAction'] = mainCompiledCode;
@@ -875,7 +875,7 @@ document.addEventListener("DOMContentLoaded", function( ) {
 		});
 		// ----------------------------------------
 		// MAIN JS
-		var mainJsDownload = fetchOrDownloadAndStore(Module.locateFile('AtTheGate-HTML5-Shipping.js'), 'blob').then(function(data) {
+		var mainJsDownload = fetchOrDownloadAndStore(Module.locateFile('UE4Game-HTML5-Shipping.js'), 'blob').then(function(data) {
 				Module['mainScriptUrlOrBlob'] = data;
 				return addScriptToDom(data).then(function() {
 					addRunDependency('wait-for-compiled-code');

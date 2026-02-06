@@ -173,6 +173,6 @@ Module['FS_createPath']('/AtTheGate/Content', 'Paks', true, true);
   }
 
  }
- loadPackage({"files": [{"start": 0, "audio": 0, "end": 53, "filename": "/Manifest_NonUFSFiles_HTML5.txt"}, {"start": 53, "audio": 0, "end": 91, "filename": "/UE4CommandLine.txt"}, {"start": 91, "audio": 0, "end": 43508972, "filename": "/AtTheGate/Content/Paks/AtTheGate-HTML5.pak"}], "remote_package_size": 43508972, "package_uuid": "f133fc27-b7f5-490f-96cb-4a52804c7463"});
+ loadPackage({"files": [{"start": 0, "audio": 0, "end": 53, "filename": "/Manifest_NonUFSFiles_HTML5.txt"}, {"start": 53, "audio": 0, "end": 91, "filename": "/UE4CommandLine.txt"}, {"start": 91, "audio": 0, "end": 43112411, "filename": "/AtTheGate/Content/Paks/AtTheGate-HTML5.pak"}], "remote_package_size": 43112411, "package_uuid": "04960479-07f3-4dcc-b87a-c0a25620eb57"});
 
 })();
