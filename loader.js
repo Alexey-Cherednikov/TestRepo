@@ -75,3 +75,8 @@ async function startGame() {
 
 // Автозапуск
 startGame();
+
+if (Module._main) {
+  Module._main();
+  console.log("_main вызван");
+}
