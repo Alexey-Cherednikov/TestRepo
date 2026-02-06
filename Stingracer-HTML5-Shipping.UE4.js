@@ -1,7 +1,3 @@
-// Добавлено для загрузки .gz файлов
-Module['wasmUrl'] = Module.locateFile("Stingracer-HTML5-Shipping.wasm.gz");
-Module['dataUrl'] = Module.locateFile("Stingracer-HTML5-Shipping.data.gz");
-
 // ======== функция отключения звука и остановки игры на паузу ====================================================
 (function() {
     const OriginalAudioContext = window.AudioContext;
