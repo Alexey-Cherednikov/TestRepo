@@ -1,45 +1,84 @@
-// === Распаковка gz-файлов (добавлено вручную) ===
+// loader.js — распаковка только .wasm.gz
 
-(async function() {
-  async function fetchGz(url) {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`Не удалось загрузить ${url}`);
+async function fetchGz(url) {
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Ошибка загрузки ${url}: ${resp.status}`);
 
-    const compressed = await resp.arrayBuffer();
-    const ds = new DecompressionStream("gzip");
-    const stream = new Response(compressed).body.pipeThrough(ds);
-    return await new Response(stream).arrayBuffer();
-  }
+  const compressed = await resp.arrayBuffer();
+
+  const ds = new DecompressionStream("gzip");
+  const stream = new Response(compressed).body.pipeThrough(ds);
+  return await new Response(stream).arrayBuffer();
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = false;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error(`Не удалось загрузить ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
+async function startGame() {
+  const status = document.getElementById("status") || document.body;
+  status.innerHTML = "Загрузка и распаковка .wasm... (10–30 сек)";
 
   try {
-    console.log("Распаковка WASM...");
+    // Распаковываем только .wasm.gz
     const wasmBuffer = await fetchGz("Stingracer-HTML5-Shipping.wasm.gz");
+    console.log("WASM распакован");
 
-    let dataBuffer = null;
-    try {
-      console.log("Распаковка DATA...");
-      dataBuffer = await fetchGz("Stingracer-HTML5-Shipping.data.gz");
-    } catch (e) {
-      console.log("Нет .data.gz, продолжаем без него");
-    }
+    // Загружаем UE4.js
+    await loadScript("Stingracer-HTML5-Shipping.UE4.js");
+    console.log("UE4 скрипт загружен");
 
-    // Подмена загрузки WASM
-    window.Module = window.Module || {};
+    // Ждём Module
+    await new Promise(resolve => {
+      const check = () => {
+        if (window.Module) {
+          resolve();
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
+    console.log("Module создан");
+
+    // Подмена .wasm
     Module['wasmDownloadAction'] = Promise.resolve({ wasmBytes: new Uint8Array(wasmBuffer) });
 
-    // Подмена .data
-    if (dataBuffer) {
-      Module['preloadedPackages'] = Module['preloadedPackages'] || {};
-      Module['preloadedPackages'][Module.locateFile('Stingracer-HTML5-Shipping.UE4.data')] = new Uint8Array(dataBuffer);
+    // .data грузим несжатым (просто await fetch, без gzip)
+    let dataBuffer = null;
+    try {
+      const dataResp = await fetch("Stingracer-HTML5-Shipping.data");
+      dataBuffer = await dataResp.arrayBuffer();
+      console.log("Data загружен несжатым");
+    } catch (e) {
+      console.log("Нет .data, продолжаем без него");
     }
 
-    console.log("Файлы распакованы и подменены");
+    if (dataBuffer) {
+      Module['preloadedPackages'] = {};
+      Module['preloadedPackages'][Module.locateFile('Stingracer-HTML5-Shipping.data')] = new Uint8Array(dataBuffer);
+    }
+
+    // Запуск игры
+    Module.callMain(Module.arguments || []);
+    console.log("callMain выполнен");
+
+    status.innerHTML = "Игра запущена!";
   } catch (e) {
-    console.error("Ошибка распаковки", e);
-    // Можно добавить fallback на несжатые файлы
-    // Module['wasmDownloadAction'] = fetch("Stingracer-HTML5-Shipping.UE4.wasm").then(r => r.arrayBuffer());
+    console.error("Ошибка:", e);
+    status.innerHTML = `<strong>Ошибка:</strong><br>${e.message}`;
   }
-})();
+}
+
+// Автозапуск
+startGame();
 
 
 // ======== функция отключения звука и остановки игры на паузу ====================================================
