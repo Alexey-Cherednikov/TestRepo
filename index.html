@@ -45,17 +45,18 @@
 <script>
 var Module = {};
 
-Module.instantiateWasm = async function(imports, successCallback) {
-    const response = await fetch("AtTheGate-HTML5-Shipping.wasm.gz");
+const originalFetch = window.fetch;
 
-    const ds = new DecompressionStream("gzip");
-    const decompressedStream = response.body.pipeThrough(ds);
-    const buffer = await new Response(decompressedStream).arrayBuffer();
-
-    const result = await WebAssembly.instantiate(buffer, imports);
-    successCallback(result.instance);
+window.fetch = async function(resource, options) {
+    if (resource.endsWith(".gz")) {
+        const response = await originalFetch(resource, options);
+        const ds = new DecompressionStream("gzip");
+        const decompressedStream = response.body.pipeThrough(ds);
+        const buffer = await new Response(decompressedStream).arrayBuffer();
+        return new Response(buffer);
+    }
+    return originalFetch(resource, options);
 };
-</script>
-<script src="AtTheGate-HTML5-Shipping.UE4.js"></script>
+</script><script src="AtTheGate-HTML5-Shipping.UE4.js"></script>
 </body>
 </html>
