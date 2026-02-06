@@ -4,12 +4,16 @@
 <head>
 <title>Stingracer</title>
 <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+
 </head>
 <body style="margin: 0; padding: 0; background: #000000; overflow: hidden;">
+<script src="/sdk.js"></script>
     
 <!-- loading-screen-->
-<div class="loading-container" id="loading-screen" style = "position: absolute; top: 50%; left: 50%;" >
-<div><h3 class="loading-text" style="font-family: monospace; font-size: 20px; color: white;">LOADING</h3></div>
+<div class="loading-container" id="loading-screen" 
+     style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            max-width: 100vw; max-height: 100vh; display: flex; align-items: center; justify-content: center;">
+  <img src="LoadingBar.gif" style="width: 100%; height: auto; object-fit: contain;">
 </div>
     
 <!-- Viewport--> 

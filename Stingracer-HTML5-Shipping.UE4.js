@@ -1,4 +1,4 @@
-// ======== функция отключения звука и остановки игры на паузу ====================================================
+﻿// ======== функция отключения звука и остановки игры на паузу ====================================================
 (function() {
     const OriginalAudioContext = window.AudioContext;
     window.AudioContext = function(...args) {
@@ -54,7 +54,7 @@ if ( AudioContext ) {
 const requiredWebGLVersion = 1;
 const targetOffscreenCanvas = false;
 const explicitlyUseWebGL1 = (location.search.indexOf('webgl1') != -1);
-const serveCompressedAssets = true;
+const serveCompressedAssets = false;
 console.log("Emscripten version: 1.38.31");
 console.log("Emscripten configuration: ");
 
@@ -208,7 +208,7 @@ function detectWebGL() {
 	} finally {
 		canvas.removeEventListener("webglcontextcreationerror", testError, false);
 		if ( targetOffscreenCanvas ) {
-			delete 'canvas';
+			delete canvas;
 		}
 	}
 	return 0;
