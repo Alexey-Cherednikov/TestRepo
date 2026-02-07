@@ -270,7 +270,7 @@ Module['instantiateWasm'] = function(info, receiveInstance) {
 		return wasmInstantiate.then(function(output) {
 			var instance = output.instance || output;
 			var module = output.module;
-			taskFinished(TASK_COMPILING);
+			CurrentTask(TASK_COMPILING);
 			Module['wasmInstantiateActionResolve'](instance);
 			receiveInstance(instance, module);
 
@@ -306,7 +306,7 @@ function compileShadersFromJson(jsonData) {
 		var nextProgramToBuild = 0;
 		function buildProgram() {
 			if (nextProgramToBuild >= shaderPrograms.length) {
-				taskFinished(TASK_SHADERS);
+				CurrentTask(TASK_SHADERS);
 				return resolve();
 			}
 			var p = shaderPrograms[nextProgramToBuild++];
@@ -425,13 +425,6 @@ function compileShadersFromJson(jsonData) {
 
 
 
-
-
-
-
-
-
-
 // download project files and progress handlers
 // ================================================================================
 
@@ -441,40 +434,38 @@ var TASK_SHADERS = 2;
 var TASK_MAIN = 3;
 var loadTasks = [ 'Downloading', 'Compiling WebAssembly', 'Building shaders', 'Launching engine'];
 
-function updateProgressBar(percent) {
-  percent = Math.max(0, Math.min(100, percent));
-  const bar = document.getElementById('progressBar');
-  const text = document.getElementById('progressText');
-  if (bar && text) {
-    bar.style.width = percent + '%';
-    text.textContent = Math.round(percent) + '%';
-  }
+
+
+function updateProgressBar(loadedBytes, totalBytes) {
+    const percent = totalBytes > 0 ? Math.min(100, (loadedBytes / totalBytes) * 100) : 0;
+    const bar = document.getElementById('progressBar');
+    const text = document.getElementById('progressText');
+    if (bar) bar.style.width = percent + '%';
+    if (text) text.textContent = Math.round(percent) + '%';
 }
-function taskFinished(taskId, error) {
+function CurrentTask(taskId, error) {
 	document.getElementById("progressName").textContent = loadTasks[taskId]
 	if (error){document.getElementById("progressName").textContent = loadTasks[taskId] + ': FAILED! ' + error}}
 
+CurrentTask[TASK_DOWNLOADING]
 
 function reportDownloadProgress(url, downloadedBytes, totalBytes, finished) {
+    // сохраняем прогресс файла
     Module['assetDownloadProgress'][url] = {
         current: downloadedBytes,
         total: totalBytes,
         finished: finished
     };
-    // Агрегируем только суммарные байты
     let totalLoadedBytes = 0;
     let totalAllBytes = 0;
-
     for (let key in Module['assetDownloadProgress']) {
         const item = Module['assetDownloadProgress'][key];
         totalLoadedBytes += item.current || 0;
         totalAllBytes   += item.total   || 0;
     }
-	MB_Loaded = formatBytes_NoMB(totalLoadedBytes)
-	updateProgressBar(MB_Loaded)
 
+    updateProgressBar(totalLoadedBytes, totalAllBytes);
 }
-
 
 function download(url, responseType) {
 	return new Promise(function(resolve, reject) {
@@ -488,7 +479,7 @@ function download(url, responseType) {
 				reportDownloadProgress(url, len, len, true);
 				resolve(xhr.response);
 			} else {
-				taskFinished(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url);
+				CurrentTask(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url);
 				reject({
 					status: xhr.status,
 					statusText: xhr.statusText
@@ -500,8 +491,8 @@ function download(url, responseType) {
 		};
 		xhr.onerror = function(e) {
 			var isFileProtocol = url.indexOf('file://') == 0 || location.protocol.indexOf('file') != -1;
-			if (isFileProtocol) taskFinished(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url +'<br>Try using a web server to avoid loading via a "file://" URL.'); // Convert the most common source of errors to a more friendly message format.
-			else taskFinished(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url);
+			if (isFileProtocol) CurrentTask(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url +'<br>Try using a web server to avoid loading via a "file://" URL.'); // Convert the most common source of errors to a more friendly message format.
+			else CurrentTask(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url);
 			reject({
 				status: xhr.status || 404,
 				statusText: xhr.statusText
@@ -579,7 +570,7 @@ function addScriptToDom(scriptCode) {
 // Startup task which is run after UE4 engine has launched.
 
 function postRunEmscripten() {
-	taskFinished(TASK_MAIN);
+	CurrentTask(TASK_MAIN);
 
 	Browser.updateCanvasDimensions = function() {};
 	Browser.setCanvasSize = function() {};
@@ -760,7 +751,7 @@ for (var i = 0; i < requiredWebGLExtensions.length; i++) {
 			.then(function(json) {
 				return compileShadersFromJson(json)
 				.catch(function(error) {
-					taskFinished(TASK_SHADERS, error + '<br>Current renderer: ' + getGpuInfo());
+					CurrentTask(TASK_SHADERS, error + '<br>Current renderer: ' + getGpuInfo());
 					throw 'Shader compilation failed';
 				});
 			});
@@ -777,7 +768,6 @@ for (var i = 0; i < requiredWebGLExtensions.length; i++) {
 			removeRunDependency('wait-for-compiled-code'); // Now we are ready to call main()
 		
 		//=========Hide loading screen====
-
 		const loadingScreen = document.getElementById('progressContainer')		
 		loadingScreen.style.transition = 'opacity 2s ease';
 		loadingScreen.style.opacity = '0';
