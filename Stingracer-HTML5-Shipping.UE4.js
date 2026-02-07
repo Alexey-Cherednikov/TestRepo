@@ -1,41 +1,4 @@
-﻿// ======== функция отключения звука и остановки игры на паузу ====================================================
-(function() {
-    const OriginalAudioContext = window.AudioContext;
-    window.AudioContext = function(...args) {
-        //console.log("Перехват AudioContext");
-        let audioCtx = new OriginalAudioContext(...args);
-
-        function pauseGame() {
-            if (typeof Module !== "undefined" && Module.pauseMainLoop) {
-                Module.pauseMainLoop();
-                audioCtx.suspend().catch(err => console.log("Ошибка при suspend():", err));
-            }
-        }
-
-        function resumeGame() {
-            if (typeof Module !== "undefined" && Module.resumeMainLoop) {
-                Module.resumeMainLoop();
-                audioCtx.resume().catch(err => console.log("Ошибка при resume():", err));
-            }
-        }
-
-        document.addEventListener("visibilitychange", function() {
-            if (document.hidden) {
-                pauseGame();
-            } else {
-                resumeGame();
-            }
-        });
-
-        // Делаем pauseGame и resumeGame глобальными, если их нужно вызывать ещё где-то
-        window.pauseGame = pauseGame;
-        window.resumeGame = resumeGame;
-
-        return audioCtx;
-    };
-})();
-
-
+﻿
 
 // ================================================================================
 // ================================================================================
