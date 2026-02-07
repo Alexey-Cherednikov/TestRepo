@@ -1,39 +1,3 @@
-// ======== функция отключения звука и остановки игры на паузу ====================================================
-(function() {
-    const OriginalAudioContext = window.AudioContext;
-    window.AudioContext = function(...args) {
-        //console.log("Перехват AudioContext");
-        let audioCtx = new OriginalAudioContext(...args);
-
-        function pauseGame() {
-            if (typeof Module !== "undefined" && Module.pauseMainLoop) {
-                Module.pauseMainLoop();
-                audioCtx.suspend().catch(err => console.log("Ошибка при suspend():", err));
-            }
-        }
-
-        function resumeGame() {
-            if (typeof Module !== "undefined" && Module.resumeMainLoop) {
-                Module.resumeMainLoop();
-                audioCtx.resume().catch(err => console.log("Ошибка при resume():", err));
-            }
-        }
-		
-        document.addEventListener("visibilitychange", function() {
-            if (document.hidden) {
-                pauseGame();
-            } else {
-                resumeGame();
-            }
-        });
-
-        // Делаем pauseGame и resumeGame глобальными, если их нужно вызывать ещё где-то
-        window.pauseGame = pauseGame;
-        window.resumeGame = resumeGame;
-
-        return audioCtx;
-    };
-})();
 
 // ================================================================================
 // ================================================================================
@@ -57,8 +21,6 @@ console.log("Emscripten version: 1.38.31");
 console.log("Emscripten configuration: ");
 
 
-
-
 // ================================================================================
 // *** HTML5 emscripten ***
 
@@ -70,60 +32,6 @@ var Module = {
 	assetDownloadProgress: {}, // Track how many bytes of each needed asset has been downloaded so far.
 
 };
-
-// ================================================================================
-// *** HTML5 UE4 ***
-
-Module.arguments = ['../../../Stingracer/Stingracer.uproject','-stdout',];
-
-// UE4 Editor or UE4 Frontend with assets "cook on the fly"?
-if (location.host != "" && (location.search.indexOf('cookonthefly') != -1)) {
-	Module.arguments.push("'-filehostIp=" + location.protocol + "//" + location.host + "'");
-}
-
-
-var UE4 = {
-	on_fatal: function() {
-		try {
-			UE4.on_fatal = Module.cwrap('on_fatal', null, ['string', 'string']);
-		} catch(e) {
-			UE4.on_fatal = function() {};
-		}
-	},
-};
-
-// ----------------------------------------
-// UE4 error and logging
-
-function addLog(info, color) {
-	$("#logwindow").append("<h4><small>" + info + " </small></h4>");
-}
-Module.print = addLog;
-
-Module.printErr = function(text) {
-	console.error(text);
-};
-
-window.onerror = function(e) {
-	e = e.toString();
-	console.error(e);
-}
-
-
-// ----------------------------------------
-// ----------------------------------------
-// detect wasm-threads
- function detectWasmThreads() {
-	return WebAssembly.validate(new Uint8Array([
-		0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, 0x01, 0x04, 0x01, 0x60,
-		0x00, 0x00, 0x03, 0x02, 0x01, 0x00, 0x05, 0x04, 0x01, 0x03, 0x01, 0x01,
-		0x0a, 0x0b, 0x01, 0x09, 0x00, 0x41, 0x01, 0xfe, 0x10, 0x02, 0x00, 0x1a,
-		0x0b
-	]));
-}
-
-Module['UE4_MultiThreaded'] = false && detectWasmThreads();
-
 
 // ================================================================================
 // ================================================================================
@@ -140,6 +48,15 @@ function heuristicIs64Bit(type) {
 	return false;
 }
 var heuristic64BitBrowser = heuristicIs64Bit('browser');
+
+
+
+
+
+
+
+
+
 
 
 // ================================================================================
@@ -207,6 +124,24 @@ function detectWebGL() {
 	}
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ------------------------------------------------------
 // canvas - scaling
@@ -325,7 +260,6 @@ function formatBytes(bytes) {
 	return bytes + ' B';
 }
 
-
 function fetchOrDownloadAndStore( url, responseType) {
     return new Promise(function(resolve, reject) {
         return download(url, responseType)
@@ -338,30 +272,24 @@ function fetchOrDownloadAndStore( url, responseType) {
     });
 }
 
-
-// Module.locateFile() routes asset downloads to either gzip compressed or uncompressed assets.
 Module.locateFile = function(name) {
-	var serveGzipped = serveCompressedAssets;
-	// When serving from file:// URLs, don't read .gz compressed files, because these files can't be transparently uncompressed.
-	var isFileProtocol = name.indexOf('file://') != -1 || location.protocol.indexOf('file') != -1;
-	if (isFileProtocol) {
-		if (!Module['shownFileProtocolWarning']) {
-			console.log('Attempting to load the page via the "file://" protocol. This only works in Firefox, and even there only when not using compression, so attempting to load uncompressed assets. Please host the page on a web server and visit it via a "http://" URL.');
-			Module['shownFileProtocolWarning'] = true;
-		}
-		serveGzipped = false;
-	}
-
-	// uncompressing very large gzip files may slow down startup times.
-//	if (!dataFileIsGzipCompressed && name.split('.').slice(-1)[0] == 'data') serveGzipped = false;
-
-	return serveGzipped ? (name + 'gz') : name;
+    console.log(name); // если хочешь видеть, что грузится
+    return name; // всегда возвращаем оригинальное имя
 };
 
-// see site/source/docs/api_reference/module.rst for details
-Module.getPreloadedPackage = function(remotePackageName, remotePackageSize) {
-	return Module['preloadedPackages'] ? Module['preloadedPackages'][remotePackageName] : null;
-}
+Module.getPreloadedPackage = function(name) {
+    return Module.preloadedPackages?.[name] || null;
+};
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -529,6 +457,23 @@ function compileShadersFromJson(jsonData) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ================================================================================
 // download project files and progress handlers
 
@@ -650,29 +595,27 @@ function download(url, responseType) {
 							statusText: 'Not Acceptable'
 						});
 					}
-
-					// After enabling Content-Encoding: gzip, make sure that the appropriate MIME type is being used for the asset, i.e. the MIME
-					// type should be that of the uncompressed asset, and not the MIME type of the compression method that was used.
-					if (xhr.getResponseHeader('Content-Type').toLowerCase().indexOf('zip') != -1) {
-						function expectedMimeType(url) {
-							if (url.indexOf('.wasm') != -1) return 'application/wasm';
-							if (url.indexOf('.js') != -1) return 'application/javascript';
-							return 'application/octet-stream';
-						}
-						taskFinished(TASK_DOWNLOADING, 'Downloaded a compressed file ' + url + ' with incorrect HTTP response header "Content-Type: ' + xhr.getResponseHeader('Content-Type') + '"!<br>Please set the MIME type of the asset to "' + expectedMimeType(url) + '".');
-						xhr.onload = xhr.onprogress = xhr.onerror = xhr.onreadystatechange = null; // Abandon tracking events from this XHR further.
-						xhr.abort();
-						return reject({
-							status: 406,
-							statusText: 'Not Acceptable'
-						});
-					}
 				}
 			}
 		}
 		xhr.send(null);
 	});
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // ================================================================================
@@ -747,17 +690,35 @@ function postRunEmscripten() {
 Module.postRun = [postRunEmscripten];
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ----------------------------------------
 // ----------------------------------------
 // MAIN
 
 document.addEventListener("DOMContentLoaded", function( ) {
-
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Deduce which version to load up.
 	var supportsWasm = (typeof WebAssembly === 'object' && typeof WebAssembly.Memory === 'function');
-	if (!supportsWasm) {
-		showErrorDialog('Your browser does not support WebAssembly. Please try updating to latest 64-bit browser that supports WebAssembly.<br>Current user agent: ' + navigator.userAgent);
+	if (!supportsWasm) { 
+		showErrorDialog('Your browser does not support WebAssembl');
 		return;
 	}
 
@@ -769,46 +730,38 @@ document.addEventListener("DOMContentLoaded", function( ) {
 //	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// check for webgl and cache it for later (UE_BrowserWebGLVersion() reads this)
-	Module['WEBGL_VERSION'] = detectWebGL();
-	console.log(getGpuInfo());
-	if (!Module['WEBGL_VERSION'] || Module['WEBGL_VERSION'] < requiredWebGLVersion) {
-		showErrorDialog('Your browser does not support WebGL ' + requiredWebGLVersion + '<br>Error reason: ' + (Module['webGLErrorReason'] || 'Unknown') + '. Try updating your browser and/or graphics card drivers.<br>Current renderer: ' + getGpuInfo());
-		return;
-	}
+// Проверка WebGL и браузера (упрощённая версия)
 
-	function shouldBrowserSupportWebGL2() {
-		var match = window.navigator.userAgent.match(/Firefox\/([0-9]+)\./);
-		if (match) return parseInt(match[1]) >= 51;
-	}
+// 1. Проверка версии WebGL
+Module['WEBGL_VERSION'] = detectWebGL();  // оставляем вызов, если он есть в твоём коде
 
-	if (Module['WEBGL_VERSION'] < 2 && !explicitlyUseWebGL1) {
-		if (shouldBrowserSupportWebGL2()) {
-			console.log('Your GPU does not support WebGL 2. This affects graphics performance and quality. Please try updating your graphics driver and/or browser to latest version.<br>Error reason: ' + (Module['webGLErrorReason'] || 'Unknown') + '<br>Current renderer: ' + getGpuInfo());
-		} else {
-			console.log('The current browser does not support WebGL 2. This affects graphics performance and quality.<br>Please try updating your browser (and/or video drivers).  NOTE: old hardware might have been blacklisted by this browser -- you may need to use a different browser.<br>Error reason: ' + (Module['webGLErrorReason'] || 'Unknown') + '<br>Current renderer: ' + getGpuInfo());
-		}
-	}
+if (!Module['WEBGL_VERSION'] || Module['WEBGL_VERSION'] < requiredWebGLVersion) {
+    console.log('WebGL ' + requiredWebGLVersion + ' не поддерживается. Текущий рендерер: ' + getGpuInfo());
+}
 
-	if (typeof OffscreenCanvas === 'undefined' && targetOffscreenCanvas) {
-		console.log('This is an experimental UE4 build that uses OffscreenCanvas, but your browser does not seem to support it. Try out Firefox Nightly or Chrome Canary, and in Firefox, set pref gfx.offscreencanvas.enabled;true in about:config, and on Chrome Canary, Enable "Experimental canvas features" in chrome://flags. Continuing without OffscreenCanvas, but performance can be severely affected, and rendering might not look correct.');
-	}
+// 2. Предупреждение про WebGL2 (если версия 1)
+if (Module['WEBGL_VERSION'] < 2 && !explicitlyUseWebGL1) {
+    console.log('WebGL 2 не поддерживается. Производительность и качество могут быть ниже. Текущий рендерер: ' + getGpuInfo());
+}
 
-	// The following WebGL 1.0 extensions are available in core WebGL 2.0 specification, so they are no longer shown in the extensions list.
-	var webGLExtensionsInCoreWebGL2 = ['ANGLE_instanced_arrays','EXT_blend_minmax','EXT_color_buffer_half_float','EXT_frag_depth','EXT_sRGB','EXT_shader_texture_lod','OES_element_index_uint','OES_standard_derivatives','OES_texture_float','OES_texture_half_float','OES_texture_half_float_linear','OES_vertex_array_object','WEBGL_color_buffer_float','WEBGL_depth_texture','WEBGL_draw_buffers'];
+// 3. Проверка OffscreenCanvas (только лог, без остановки)
+if (typeof OffscreenCanvas === 'undefined' && targetOffscreenCanvas) {
+    console.log('OffscreenCanvas не поддерживается. Производительность может быть ниже.');
+}
 
-	var supportedWebGLExtensions = Module['preinitializedWebGLContext'].getSupportedExtensions();
-	if (Module['WEBGL_VERSION'] >= 2) supportedWebGLExtensions = supportedWebGLExtensions.concat(webGLExtensionsInCoreWebGL2);
+// 4. Проверка расширений (только если критические отсутствуют — лог)
+var supportedWebGLExtensions = Module['preinitializedWebGLContext']?.getSupportedExtensions() || [];
 
-	// The following WebGL extensions are required by UE4/this project, and it cannot run without.
-	var requiredWebGLExtensions = []; // TODO: List WebGL extensions here that the demo needs and can't run without.
-	for(var i in requiredWebGLExtensions) {
-		if (supportedWebGLExtensions.indexOf(requiredWebGLExtensions[i]) == -1) {
-			showErrorDialog('Your browser does not support WebGL extension ' + requiredWebGLExtensions[i] + ', which is required to run this page!');
-		}
-	}
+var requiredWebGLExtensions = []; // ← добавь сюда, если знаешь, какие нужны именно тебе
 
-	// The following WebGL extensions would be preferred to exist for best features/performance, but are not strictly needed and UE4 can fall back if not available.
+for (var i = 0; i < requiredWebGLExtensions.length; i++) {
+    if (!supportedWebGLExtensions.includes(requiredWebGLExtensions[i])) {
+        console.log('Отсутствует расширение WebGL: ' + requiredWebGLExtensions[i]);
+    }
+}
+
+
+// The following WebGL extensions would be preferred to exist for best features/performance, but are not strictly needed and UE4 can fall back if not available.
 	var preferredToHaveWebGLExtensions = [// The following are core in WebGL 2:
 	                                      'ANGLE_instanced_arrays', // UE4 uses instanced rendering where possible, but can fallback to noninstanced.
 	                                      'EXT_color_buffer_half_float',
@@ -927,6 +880,10 @@ document.addEventListener("DOMContentLoaded", function( ) {
 	Downloading();
 });
 
+
+//=====================================================================
+//=====================================================================
+
 // === Russian keys binding + focus canvas ===
 function waitForEnvironment(callback) {
     function checkReady() {
@@ -962,10 +919,8 @@ waitForEnvironment(() => {
 
         if (type === 'keydown') {
             if (activeKeys.has(event.code)) return;
-            activeKeys.add(event.code);
-        } else {
-            activeKeys.delete(event.code);
-        }
+            activeKeys.add(event.code);} 
+			else {activeKeys.delete(event.code);}
 
         const synthetic = new KeyboardEvent(type, {
             key: map.en,
@@ -985,3 +940,38 @@ waitForEnvironment(() => {
     Module['UE4_keyEvent'] = (type, key) =>
         ['ц','Ц','ф','Ф','ы','Ы','в','В'].includes(key) ? 5 : 0;
 });
+
+
+// ======== функция отключения звука и остановки игры на паузу ====================================================
+(function() {
+    const OriginalAudioContext = window.AudioContext;
+    window.AudioContext = function(...args) {
+        //console.log("Перехват AudioContext");
+        let audioCtx = new OriginalAudioContext(...args);
+
+        function pauseGame() {
+            if (typeof Module !== "undefined" && Module.pauseMainLoop) {
+                Module.pauseMainLoop();
+                audioCtx.suspend().catch(err => console.log("Ошибка при suspend():", err));
+            }
+        }
+
+        function resumeGame() {
+            if (typeof Module !== "undefined" && Module.resumeMainLoop) {
+                Module.resumeMainLoop();
+                audioCtx.resume().catch(err => console.log("Ошибка при resume():", err));
+            }
+        }
+		
+        document.addEventListener("visibilitychange", function() {
+            if (document.hidden) {pauseGame();} 
+			else {resumeGame();}
+        });
+
+        // Делаем pauseGame и resumeGame глобальными, если их нужно вызывать ещё где-то
+        window.pauseGame = pauseGame;
+        window.resumeGame = resumeGame;
+
+        return audioCtx;
+    };
+})();
