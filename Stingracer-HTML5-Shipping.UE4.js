@@ -18,7 +18,7 @@
                 audioCtx.resume().catch(err => console.log("Ошибка при resume():", err));
             }
         }
-
+		
         document.addEventListener("visibilitychange", function() {
             if (document.hidden) {
                 pauseGame();
