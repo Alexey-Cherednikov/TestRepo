@@ -23,19 +23,6 @@
 <div id="fullscreen_request"></div>
 </div>
 
-<script>
-var Module = {
-    setStatus: function(text) {
-        console.log(text);
-        var match = text.match(/([0-9]+)%/);
-        if (match) {
-            var percent = parseInt(match[1]);
-            document.getElementById("progress").innerText = percent + "%";
-        }
-    }
-};
-</script>
-
 
 <div id="progress" 
      style="position:absolute; 
