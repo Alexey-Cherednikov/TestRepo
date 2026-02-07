@@ -453,7 +453,7 @@ function updateProgressBar(percent) {
 
 function taskFinished(taskId, error) {
 	document.getElementById("progressName").textContent = loadTasks[taskId]
-	if (!error){ 
+	if (error){ 
 		document.getElementById("progressName").textContent = loadTasks[taskId] + ': FAILED! ' + error}
 	}
 
@@ -505,32 +505,15 @@ function download(url, responseType) {
 		xhr.onprogress = function(p) {
 			if (p.lengthComputable) reportDownloadProgress(url, p.loaded, p.total);
 		};
-		xhr.onerror = function(e) {
-			var isFileProtocol = url.indexOf('file://') == 0 || location.protocol.indexOf('file') != -1;
-			if (isFileProtocol) taskFinished(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url +'<br>Try using a web server to avoid loading via a "file://" URL.'); // Convert the most common source of errors to a more friendly message format.
-			else taskFinished(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url);
-			reject({
-				status: xhr.status || 404,
-				statusText: xhr.statusText
-			});
-		};
-		xhr.onreadystatechange = function() {
-			if (xhr.readyState >= xhr.HEADERS_RECEIVED) {
-				if (url.endsWith('gz') && (xhr.status == 0 || xhr.status == 200)) {
-					if (xhr.getResponseHeader('Content-Encoding') != 'gzip') {
-						// A fallback is to set serveCompressedAssets = false to serve uncompressed assets instead, but that is not really recommended for production use, since gzip compression shrinks
-						// download sizes so dramatically that omitting it for production is not a good idea.
-						taskFinished(TASK_DOWNLOADING, 'Downloaded a compressed file ' + url + ' without the necessary HTTP response header "Content-Encoding: gzip" specified!<br>Please configure gzip compression on this asset on the web server to serve gzipped assets!');
-						xhr.onload = xhr.onprogress = xhr.onerror = xhr.onreadystatechange = null; // Abandon tracking events from this XHR further.
-						xhr.abort();
-						return reject({
-							status: 406,
-							statusText: 'Not Acceptable'
-						});
-					}
-				}
-			}
-		}
+		// xhr.onerror = function(e) {
+		// 	var isFileProtocol = url.indexOf('file://') == 0 || location.protocol.indexOf('file') != -1;
+		// 	if (isFileProtocol) taskFinished(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url +'<br>Try using a web server to avoid loading via a "file://" URL.'); // Convert the most common source of errors to a more friendly message format.
+		// 	else taskFinished(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url);
+		// 	reject({
+		// 		status: xhr.status || 404,
+		// 		statusText: xhr.statusText
+		// 	});
+		// };
 		xhr.send(null);
 	});
 }
@@ -803,9 +786,9 @@ for (var i = 0; i < requiredWebGLExtensions.length; i++) {
 		//=========Hide loading screen====
 
 		const loadingScreen = document.getElementById('progressContainer')		
-		loadingScreen.style.transition = 'opacity 1s ease';
+		loadingScreen.style.transition = 'opacity 2s ease';
 		loadingScreen.style.opacity = '0';
-		setTimeout(() => { loadingScreen.style.display = 'none';}, 1000); // после 1 секунды полностью скрываем 
+		setTimeout(() => { loadingScreen.style.display = 'none';}, 2000); // после 1 секунды полностью скрываем 
 		});
 	};
 	// GO !	// ----------------------------------------
