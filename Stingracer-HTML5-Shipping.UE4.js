@@ -56,14 +56,6 @@ var heuristic64BitBrowser = heuristicIs64Bit('browser');
 
 
 
-
-
-
-
-
-
-
-
 // WebGL
 // ================================================================================
 
@@ -231,6 +223,15 @@ function formatBytes(bytes) {
 	if (bytes >= 1024) return (bytes / 1024).toFixed(1) + ' KB';
 	return bytes + ' B';
 }
+
+function formatBytes_NoMB(bytes) {
+	if (bytes >= 1024*1024*1024) return (bytes / (1024*1024*1024)).toFixed(1);
+	if (bytes >= 1024*1024) return (bytes / (1024*1024)).toFixed(0);
+	if (bytes >= 1024) return (bytes / 1024).toFixed(1);
+	return bytes;
+}
+
+
 
 function fetchOrDownloadAndStore( url, responseType) {
     return new Promise(function(resolve, reject) {
@@ -424,6 +425,13 @@ function compileShadersFromJson(jsonData) {
 
 
 
+
+
+
+
+
+
+
 // download project files and progress handlers
 // ================================================================================
 
@@ -433,11 +441,20 @@ var TASK_SHADERS = 2;
 var TASK_MAIN = 3;
 var loadTasks = [ 'Downloading', 'Compiling WebAssembly', 'Building shaders', 'Launching engine'];
 
+function updateProgressBar(percent) {
+  percent = Math.max(0, Math.min(100, percent));
+  const bar = document.getElementById('progressBar');
+  const text = document.getElementById('progressText');
+  if (bar && text) {
+    bar.style.width = percent + '%';
+    text.textContent = Math.round(percent) + '%';
+  }
+}
 
 function taskFinished(taskId, error) {
-	
-	document.getElementById("progressName").innerText= loadTasks[taskId]
-	if (!error){ loadTasks[taskId] + ': FAILED! ' + error}
+	document.getElementById("progressName").textContent = loadTasks[taskId]
+	if (!error){ 
+		document.getElementById("progressName").textContent = loadTasks[taskId] + ': FAILED! ' + error}
 	}
 
 function reportDownloadProgress(url, downloadedBytes, totalBytes, finished) {
@@ -462,7 +479,8 @@ function reportDownloadProgress(url, downloadedBytes, totalBytes, finished) {
 
 	if (aggregated.finished) taskFinished(TASK_DOWNLOADING);
 
-	document.getElementById("progressCounter").innerText= aggregated.currentShow + "%";
+	MB_Loaded = formatBytes_NoMB(aggregated.current)
+	updateProgressBar(MB_Loaded, )
 }
 
 function download(url, responseType) {
@@ -783,12 +801,13 @@ for (var i = 0; i < requiredWebGLExtensions.length; i++) {
 			removeRunDependency('wait-for-compiled-code'); // Now we are ready to call main()
 		
 		//=========Hide loading screen====
-		const loadingScreen = document.getElementById('loading-screen')			
-		loadingScreen.style.opacity = "0";
-		setTimeout(() => loadingScreen.style.display = "none", 1000); 
+
+		const loadingScreen = document.getElementById('progressContainer')		
+		loadingScreen.style.transition = 'opacity 1s ease';
+		loadingScreen.style.opacity = '0';
+		setTimeout(() => { loadingScreen.style.display = 'none';}, 1000); // после 1 секунды полностью скрываем 
 		});
 	};
-
 	// GO !	// ----------------------------------------
 
 	Downloading();
