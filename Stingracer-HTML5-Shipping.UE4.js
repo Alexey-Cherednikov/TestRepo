@@ -454,31 +454,27 @@ function taskFinished(taskId, error) {
 	document.getElementById("progressName").textContent = loadTasks[taskId]
 	if (error){document.getElementById("progressName").textContent = loadTasks[taskId] + ': FAILED! ' + error}}
 
+
 function reportDownloadProgress(url, downloadedBytes, totalBytes, finished) {
-	Module['assetDownloadProgress'][url] = {
-		current: downloadedBytes,
-		total: totalBytes,
-		finished: finished
-	};
-	var aggregated = {
-		current: 0,
-		total: 0,
-		finished: true
-	};
-	for(var i in Module['assetDownloadProgress']) {
-		aggregated.current += Module['assetDownloadProgress'][i].current;
-		aggregated.total += Module['assetDownloadProgress'][i].total;
-		aggregated.finished = aggregated.finished && Module['assetDownloadProgress'][i].finished;
-	}
+    Module['assetDownloadProgress'][url] = {
+        current: downloadedBytes,
+        total: totalBytes,
+        finished: finished
+    };
+    // Агрегируем только суммарные байты
+    let totalLoadedBytes = 0;
+    let totalAllBytes = 0;
 
-	aggregated.currentShow = formatBytes(aggregated.current);
-	aggregated.totalShow = formatBytes(aggregated.total);
+    for (let key in Module['assetDownloadProgress']) {
+        const item = Module['assetDownloadProgress'][key];
+        totalLoadedBytes += item.current || 0;
+        totalAllBytes   += item.total   || 0;
+    }
+	MB_Loaded = formatBytes_NoMB(totalLoadedBytes)
+	updateProgressBar(MB_Loaded)
 
-	if (aggregated.finished) taskFinished(TASK_DOWNLOADING);
-
-	MB_Loaded = formatBytes_NoMB(aggregated.total)
-	updateProgressBar(MB_Loaded, )
 }
+
 
 function download(url, responseType) {
 	return new Promise(function(resolve, reject) {
