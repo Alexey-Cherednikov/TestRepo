@@ -22,7 +22,32 @@
 <canvas tabindex=0 id="canvas" oncontextmenu= "return false;" class="emscripten" style="display: none; overflow: hidden; min-height: 100vh; min-width: 100vw; "></canvas>
 <div id="fullscreen_request"></div>
 </div>
-	
+
+<script>
+var Module = {
+    setStatus: function(text) {
+        console.log(text);
+        var match = text.match(/([0-9]+)%/);
+        if (match) {
+            var percent = parseInt(match[1]);
+            document.getElementById("progress").innerText = percent + "%";
+        }
+    }
+};
+</script>
+
+
+<div id="progress" 
+     style="position:absolute; 
+            top:50%; 
+            left:50%; 
+            position: absolute; top: 55%; left: 50%;
+            font-size:40px;
+            color:white;">
+0%
+</div>
+
+
 <script src="Stingracer-HTML5-Shipping.UE4.js"></script>
 </body>
 </html>

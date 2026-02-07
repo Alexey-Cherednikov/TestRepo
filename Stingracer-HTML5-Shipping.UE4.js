@@ -1,55 +1,41 @@
 ﻿// ======== функция отключения звука и остановки игры на паузу ====================================================
-(function () {
-    function unlockAudio() {
-        // Найдём все возможные контексты
-        if (window.Module && Module.SDL2 && Module.SDL2.audioContext) {
-            const ctx = Module.SDL2.audioContext;
-            if (ctx && ctx.state === "suspended") {
-                ctx.resume().then(() => {
-                    console.log("Audio unlocked via SDL2 context");
-                });
+(function() {
+    const OriginalAudioContext = window.AudioContext;
+    window.AudioContext = function(...args) {
+        //console.log("Перехват AudioContext");
+        let audioCtx = new OriginalAudioContext(...args);
+
+        function pauseGame() {
+            if (typeof Module !== "undefined" && Module.pauseMainLoop) {
+                Module.pauseMainLoop();
+                audioCtx.suspend().catch(err => console.log("Ошибка при suspend():", err));
             }
         }
-        // fallback — если создавался вручную
-        if (window.audioCtx && window.audioCtx.state === "suspended") {
-            window.audioCtx.resume();
-        }
-        document.removeEventListener("click", unlockAudio);
-        document.removeEventListener("keydown", unlockAudio);
-        document.removeEventListener("touchstart", unlockAudio);
-    }
-    document.addEventListener("click", unlockAudio, true);
-    document.addEventListener("keydown", unlockAudio, true);
-    document.addEventListener("touchstart", unlockAudio, true);
-})();   
- // ==== Pause / Resume Game ====
 
-    function pauseGame() {
-        if (typeof Module !== "undefined" && Module.pauseMainLoop) {
-            Module.pauseMainLoop();
+        function resumeGame() {
+            if (typeof Module !== "undefined" && Module.resumeMainLoop) {
+                Module.resumeMainLoop();
+                audioCtx.resume().catch(err => console.log("Ошибка при resume():", err));
+            }
         }
-        if (audioCtx && audioCtx.state === "running") {
-            audioCtx.suspend().catch(err =>
-                console.log("Suspend error:", err)
-            );
-        }
-    }
-    function resumeGame() {
-        if (typeof Module !== "undefined" && Module.resumeMainLoop) {
-            Module.resumeMainLoop();
-        }
-        if (audioCtx && audioCtx.state === "suspended") {
-            audioCtx.resume().catch(err =>
-                console.log("Resume error:", err)
-            );
-        }
-    }
-    document.addEventListener("visibilitychange", function () {
-        if (document.hidden) pauseGame();
-        else resumeGame();
-    });
-    window.pauseGame = pauseGame;
-    window.resumeGame = resumeGame;
+
+        document.addEventListener("visibilitychange", function() {
+            if (document.hidden) {
+                pauseGame();
+            } else {
+                resumeGame();
+            }
+        });
+
+        // Делаем pauseGame и resumeGame глобальными, если их нужно вызывать ещё где-то
+        window.pauseGame = pauseGame;
+        window.resumeGame = resumeGame;
+
+        return audioCtx;
+    };
+})();
+
+
 
 // ================================================================================
 // ================================================================================
