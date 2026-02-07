@@ -1,4 +1,4 @@
-﻿// ======== функция отключения звука и остановки игры на паузу ====================================================
+// ======== функция отключения звука и остановки игры на паузу ====================================================
 (function() {
     const OriginalAudioContext = window.AudioContext;
     window.AudioContext = function(...args) {
@@ -34,8 +34,6 @@
         return audioCtx;
     };
 })();
-
-
 
 // ================================================================================
 // ================================================================================
@@ -366,6 +364,8 @@ Module.getPreloadedPackage = function(remotePackageName, remotePackageSize) {
 }
 
 
+
+
 // ================================================================================
 // COMPILER
 
@@ -601,6 +601,8 @@ function reportDownloadProgress(url, downloadedBytes, totalBytes, finished) {
 
 	if (aggregated.finished) taskFinished(TASK_DOWNLOADING);
 	else taskProgress(TASK_DOWNLOADING, aggregated);
+
+	document.getElementById("progress").innerText= aggregated.currentShow + "%";
 }
 
 function download(url, responseType) {
@@ -672,39 +674,6 @@ function download(url, responseType) {
 	});
 }
 
-function download(url, responseType) {
-    return new Promise(function(resolve, reject) {
-
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
-        xhr.responseType = responseType || 'arraybuffer';
-        xhr.onprogress = function(e) {
-            if (e.lengthComputable) {
-                var percent = Math.floor((e.loaded / e.total) * 100);
-
-                updateProgress(percent);
-            }
-        };
-        xhr.onload = function() {
-            if (xhr.status >= 200 && xhr.status < 300) {
-                updateProgress(100);
-                resolve(xhr.response);
-            } else {
-                reject(xhr.statusText);
-            }
-        };
-        xhr.onerror = function() {
-            reject("Download error");
-        };
-        xhr.send();
-    });
-}
-
-
-function updateProgress(percent) {
-    var text = document.getElementById("progress");
-    if (text) text.innerText = percent + "%";
-}
 
 // ================================================================================
 // ================================================================================
