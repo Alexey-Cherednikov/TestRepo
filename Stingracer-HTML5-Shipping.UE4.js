@@ -450,12 +450,9 @@ function updateProgressBar(percent) {
     text.textContent = Math.round(percent) + '%';
   }
 }
-
 function taskFinished(taskId, error) {
 	document.getElementById("progressName").textContent = loadTasks[taskId]
-	if (error){ 
-		document.getElementById("progressName").textContent = loadTasks[taskId] + ': FAILED! ' + error}
-	}
+	if (error){document.getElementById("progressName").textContent = loadTasks[taskId] + ': FAILED! ' + error}}
 
 function reportDownloadProgress(url, downloadedBytes, totalBytes, finished) {
 	Module['assetDownloadProgress'][url] = {
@@ -479,7 +476,7 @@ function reportDownloadProgress(url, downloadedBytes, totalBytes, finished) {
 
 	if (aggregated.finished) taskFinished(TASK_DOWNLOADING);
 
-	MB_Loaded = formatBytes_NoMB(aggregated.current)
+	MB_Loaded = formatBytes_NoMB(aggregated.total)
 	updateProgressBar(MB_Loaded, )
 }
 
@@ -505,15 +502,15 @@ function download(url, responseType) {
 		xhr.onprogress = function(p) {
 			if (p.lengthComputable) reportDownloadProgress(url, p.loaded, p.total);
 		};
-		// xhr.onerror = function(e) {
-		// 	var isFileProtocol = url.indexOf('file://') == 0 || location.protocol.indexOf('file') != -1;
-		// 	if (isFileProtocol) taskFinished(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url +'<br>Try using a web server to avoid loading via a "file://" URL.'); // Convert the most common source of errors to a more friendly message format.
-		// 	else taskFinished(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url);
-		// 	reject({
-		// 		status: xhr.status || 404,
-		// 		statusText: xhr.statusText
-		// 	});
-		// };
+		xhr.onerror = function(e) {
+			var isFileProtocol = url.indexOf('file://') == 0 || location.protocol.indexOf('file') != -1;
+			if (isFileProtocol) taskFinished(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url +'<br>Try using a web server to avoid loading via a "file://" URL.'); // Convert the most common source of errors to a more friendly message format.
+			else taskFinished(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url);
+			reject({
+				status: xhr.status || 404,
+				statusText: xhr.statusText
+			});
+		};
 		xhr.send(null);
 	});
 }
