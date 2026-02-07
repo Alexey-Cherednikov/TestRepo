@@ -9,10 +9,12 @@ if ( AudioContext ) {
 	ue4_hacks.panner.__proto__.setVelocity = ( ue4_hacks.panner.__proto__.setVelocity || function(){} );
 }
 
-// ================================================================================
-// ================================================================================
-// project configuration
 
+
+
+
+// project configuration
+// ================================================================================
 const requiredWebGLVersion = 1;
 const targetOffscreenCanvas = false;
 const explicitlyUseWebGL1 = (location.search.indexOf('webgl1') != -1);
@@ -21,8 +23,10 @@ console.log("Emscripten version: 1.38.31");
 console.log("Emscripten configuration: ");
 
 
-// ================================================================================
+
+
 // *** HTML5 emscripten ***
+// ================================================================================
 
 var Module = {
 	// state management
@@ -33,9 +37,10 @@ var Module = {
 
 };
 
-// ================================================================================
-// ================================================================================
+
+
 // emscripten memory system
+// ================================================================================
 
 // Tests if type === 'browser' or type === 'os' is 64-bit or not.
 function heuristicIs64Bit(type) {
@@ -59,13 +64,11 @@ var heuristic64BitBrowser = heuristicIs64Bit('browser');
 
 
 
-// ================================================================================
 // WebGL
+// ================================================================================
 
 Module['preinitializedWebGLContext'] = null;
-
 Module['canvas'] = document.getElementById('canvas');
-
 function getGpuInfo() {
 	var gl = Module['preinitializedWebGLContext'];
 	if (!gl) return '(no GL: ' + Module['webGLErrorReason'] + ')';
@@ -137,61 +140,27 @@ function detectWebGL() {
 
 
 
-
-
-
-
-
-
-// ------------------------------------------------------
 // canvas - scaling
-// ------------------------------------------------------
-var canvasWindowedScaleMode = 1 /*STRETCH*/;
+// ================================================================================
 var canvasWindowedUseHighDpi = true;
-var canvasAspectRatioWidth = 1366;
-var canvasAspectRatioHeight = 768;
-
 function resizeCanvas(aboutToEnterFullscreen) {
     var minimumCanvasHeightCssPixels = 280;
     var minimumCanvasHeightFractionOfBrowserWindowHeight = 1;
-
     var mainArea = document.getElementById('mainarea');
     if (!mainArea) {
         console.error('mainArea не найден!');
         return;
     }
-
     var canvasRect = mainArea.getBoundingClientRect();
     var cssWidth = canvasRect.right - canvasRect.left;
     var cssHeight = Math.max(minimumCanvasHeightCssPixels, window.innerHeight * minimumCanvasHeightFractionOfBrowserWindowHeight);
-
-    if (canvasWindowedScaleMode == 3 /*NONE*/) {
-        var newRenderTargetWidth = canvasAspectRatioWidth;
-        var newRenderTargetHeight = canvasAspectRatioHeight;
-    } else {
-        var newRenderTargetWidth = canvasWindowedUseHighDpi ? (cssWidth * window.devicePixelRatio) : cssWidth;
-        var newRenderTargetHeight = canvasWindowedUseHighDpi ? (cssHeight * window.devicePixelRatio) : cssHeight;
-
-        if (canvasWindowedScaleMode == 2 /*ASPECT*/) {
-            if (cssWidth * canvasAspectRatioHeight > canvasAspectRatioWidth * cssHeight) {
-                newRenderTargetWidth = newRenderTargetHeight * canvasAspectRatioWidth / canvasAspectRatioHeight;
-            } else {
-                newRenderTargetHeight = newRenderTargetWidth * canvasAspectRatioHeight / canvasAspectRatioWidth;
-            }
-        }
-
-        newRenderTargetWidth = Math.round(newRenderTargetWidth);
-        newRenderTargetHeight = Math.round(newRenderTargetHeight);
-    }
-
-    cssWidth = canvasWindowedUseHighDpi ? (newRenderTargetWidth / window.devicePixelRatio) : newRenderTargetWidth;
-    cssHeight = canvasWindowedUseHighDpi ? (newRenderTargetHeight / window.devicePixelRatio) : newRenderTargetHeight;
-
-    _emscripten_set_canvas_element_size(Module['canvas'].id, newRenderTargetWidth, newRenderTargetHeight);
-    Module['canvas'].style.width = cssWidth + 'px';
-    Module['canvas'].style.height = cssHeight + 'px';
-
-    if (UE_JSlib?.UE_CanvasSizeChanged) UE_JSlib.UE_CanvasSizeChanged();
+	var newRenderTargetWidth = canvasWindowedUseHighDpi ? (cssWidth * window.devicePixelRatio) : cssWidth;
+    var newRenderTargetHeight = canvasWindowedUseHighDpi ? (cssHeight * window.devicePixelRatio) : cssHeight;
+	Module['canvas'].width  = Math.round(newRenderTargetWidth);
+	Module['canvas'].height = Math.round(newRenderTargetHeight);
+    if (typeof UE_JSlib !== 'undefined' && UE_JSlib && typeof UE_JSlib.UE_CanvasSizeChanged === 'function') {
+    UE_JSlib.UE_CanvasSizeChanged();
+	}
 }
 Module['UE4_resizeCanvas'] = resizeCanvas;
 
@@ -233,7 +202,6 @@ waitForEnvironment(() => {
     resizeCanvas(); // Начальный вызов
 });
 
-
 // ----------------------------------------
 
 Module['UE4_keyEvent'] = function(eventType, key, virtualKeyCode, domPhysicalKeyCode, keyEventStruct) { return 0; }
@@ -242,15 +210,19 @@ Module['UE4_wheelEvent'] = function(eventType, x, y, button, buttons, deltaX, de
 
 
 // ----------------------------------------
-// ----------------------------------------
 // canvas - fullscreen
 Module['UE4_fullscreenScaleMode'] = 1;//canvasWindowedScaleMode; // BUG: if using FIXED, fullscreen gets some strange padding on margin...
 Module['UE4_fullscreenCanvasResizeMode'] = canvasWindowedUseHighDpi ? 2/*HIDPI*/ : 1/*Standard DPI*/;
 Module['UE4_fullscreenFilteringMode'] = 0;
 
-
-
 // ================================================================================
+
+
+
+
+
+
+
 // ================================================================================
 
 function formatBytes(bytes) {
@@ -273,8 +245,8 @@ function fetchOrDownloadAndStore( url, responseType) {
 }
 
 Module.locateFile = function(name) {
-    console.log(name); // если хочешь видеть, что грузится
-    return name; // всегда возвращаем оригинальное имя
+    console.log(name); 
+    return name;
 };
 
 Module.getPreloadedPackage = function(name) {
@@ -285,24 +257,14 @@ Module.getPreloadedPackage = function(name) {
 
 
 
-
-
-
-
-
-
-
-
-
+// COMPLER
 // ================================================================================
-// COMPILER
 
-// ----------------------------------------
 // wasm
+// ----------------------------------------
 
 Module['instantiateWasm'] = function(info, receiveInstance) {
 	Module['wasmDownloadAction'].then(function(downloadResults) {
-		taskProgress(TASK_COMPILING);
 		var wasmInstantiate = WebAssembly.instantiate(downloadResults.wasmModule || new Uint8Array(downloadResults.wasmBytes), info);
 		return wasmInstantiate.then(function(output) {
 			var instance = output.instance || output;
@@ -320,8 +282,8 @@ Module['instantiateWasm'] = function(info, receiveInstance) {
 }
 
 
-// ----------------------------------------
 // shaders
+// ----------------------------------------
 
 function compileShadersFromJson(jsonData) {
 	var shaderPrograms = [];
@@ -347,7 +309,6 @@ function compileShadersFromJson(jsonData) {
 				return resolve();
 			}
 			var p = shaderPrograms[nextProgramToBuild++];
-			taskProgress(TASK_SHADERS, {current: nextProgramToBuild, total: shaderPrograms.length });
 			var program = gl.createProgram();
 
 			function lineNumberize(str) {
@@ -463,19 +424,8 @@ function compileShadersFromJson(jsonData) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-// ================================================================================
 // download project files and progress handlers
+// ================================================================================
 
 var TASK_DOWNLOADING = 0;
 var TASK_COMPILING = 1;
@@ -483,46 +433,12 @@ var TASK_SHADERS = 2;
 var TASK_MAIN = 3;
 var loadTasks = [ 'Downloading', 'Compiling WebAssembly', 'Building shaders', 'Launching engine'];
 
-function taskProgress(taskId, progress) {
-	var c = document.getElementById('compilingmessage');
-	if (c) c.style.display = 'block';
-	else return;
-	var l = document.getElementById('load_' + taskId);
-	if (!l) {
-		var tasks = document.getElementById('loadTasks');
-		if (!tasks) return;
-		l = document.createElement('div');
-		l.innerHTML = '<span id="icon_' + taskId + '" class="glyphicon glyphicon-refresh glyphicon-spin"></span>  <span id="load_' + taskId + '"></span>';
-		tasks.appendChild(l);
-		l = document.getElementById('load_' + taskId);
-	}
-	if (!l.startTime) l.startTime = performance.now();
-	var text = loadTasks[taskId];
-	if (progress && progress.total) {
-		text += ': ' + (progress.currentShow || progress.current) + '/' + (progress.totalShow || progress.total) + ' (' + (progress.current * 100 / progress.total).toFixed(0) + '%)';
-	} else {
-		text += '...';
-	}
-	l.innerHTML = text;
-}
 
 function taskFinished(taskId, error) {
-	var l = document.getElementById('load_' + taskId);
-	var icon = document.getElementById('icon_' + taskId);
-	if (l && icon) {
-		var totalTime = performance.now() - l.startTime;
-		if (!error) {
-			l.innerHTML = loadTasks[taskId] + ' (' + (totalTime/1000).toFixed(2) + 's)';
-			icon.className = 'glyphicon glyphicon-ok';
-		}
-		else {
-			l.innerHTML = loadTasks[taskId] + ': FAILED! ' + error;
-			icon.className = 'glyphicon glyphicon-remove';
-
-			showErrorDialog(loadTasks[taskId] + ' failed: <br> ' + error);
-		}
+	
+	document.getElementById("progressName").innerText= loadTasks[taskId]
+	if (!error){ loadTasks[taskId] + ': FAILED! ' + error}
 	}
-}
 
 function reportDownloadProgress(url, downloadedBytes, totalBytes, finished) {
 	Module['assetDownloadProgress'][url] = {
@@ -545,9 +461,8 @@ function reportDownloadProgress(url, downloadedBytes, totalBytes, finished) {
 	aggregated.totalShow = formatBytes(aggregated.total);
 
 	if (aggregated.finished) taskFinished(TASK_DOWNLOADING);
-	else taskProgress(TASK_DOWNLOADING, aggregated);
 
-	document.getElementById("progress").innerText= aggregated.currentShow + "%";
+	document.getElementById("progressCounter").innerText= aggregated.currentShow + "%";
 }
 
 function download(url, responseType) {
@@ -865,7 +780,6 @@ for (var i = 0; i < requiredWebGLExtensions.length; i++) {
 			if (!precompileShaders) {
 				Module['precompiledShaders'] = Module['precompiledPrograms'] = Module['preinitializedWebGLContext'] = Module['glIDCounter'] = Module['precompiledUniforms'] = null;
 			}
-			taskProgress(TASK_MAIN);
 			removeRunDependency('wait-for-compiled-code'); // Now we are ready to call main()
 		
 		//=========Hide loading screen====
