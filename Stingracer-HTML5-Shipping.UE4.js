@@ -108,11 +108,7 @@ Module.printErr = function(text) {
 
 window.onerror = function(e) {
 	e = e.toString();
-	if (e.toLowerCase().indexOf('memory') != -1) {
-		e += '<br>';
-		if (!heuristic64BitBrowser) e += ' Try running in a 64-bit browser to resolve.';
-	}
-	showErrorDialog(e);
+	console.error(e);
 }
 
 
@@ -536,13 +532,152 @@ function compileShadersFromJson(jsonData) {
 // ================================================================================
 // download project files and progress handlers
 
+var TASK_DOWNLOADING = 0;
+var TASK_COMPILING = 1;
+var TASK_SHADERS = 2;
+var TASK_MAIN = 3;
+var loadTasks = [ 'Downloading', 'Compiling WebAssembly', 'Building shaders', 'Launching engine'];
+
+function taskProgress(taskId, progress) {
+	var c = document.getElementById('compilingmessage');
+	if (c) c.style.display = 'block';
+	else return;
+	var l = document.getElementById('load_' + taskId);
+	if (!l) {
+		var tasks = document.getElementById('loadTasks');
+		if (!tasks) return;
+		l = document.createElement('div');
+		l.innerHTML = '<span id="icon_' + taskId + '" class="glyphicon glyphicon-refresh glyphicon-spin"></span>  <span id="load_' + taskId + '"></span>';
+		tasks.appendChild(l);
+		l = document.getElementById('load_' + taskId);
+	}
+	if (!l.startTime) l.startTime = performance.now();
+	var text = loadTasks[taskId];
+	if (progress && progress.total) {
+		text += ': ' + (progress.currentShow || progress.current) + '/' + (progress.totalShow || progress.total) + ' (' + (progress.current * 100 / progress.total).toFixed(0) + '%)';
+	} else {
+		text += '...';
+	}
+	l.innerHTML = text;
+}
+
+function taskFinished(taskId, error) {
+	var l = document.getElementById('load_' + taskId);
+	var icon = document.getElementById('icon_' + taskId);
+	if (l && icon) {
+		var totalTime = performance.now() - l.startTime;
+		if (!error) {
+			l.innerHTML = loadTasks[taskId] + ' (' + (totalTime/1000).toFixed(2) + 's)';
+			icon.className = 'glyphicon glyphicon-ok';
+		}
+		else {
+			l.innerHTML = loadTasks[taskId] + ': FAILED! ' + error;
+			icon.className = 'glyphicon glyphicon-remove';
+
+			showErrorDialog(loadTasks[taskId] + ' failed: <br> ' + error);
+		}
+	}
+}
+
+function reportDownloadProgress(url, downloadedBytes, totalBytes, finished) {
+	Module['assetDownloadProgress'][url] = {
+		current: downloadedBytes,
+		total: totalBytes,
+		finished: finished
+	};
+	var aggregated = {
+		current: 0,
+		total: 0,
+		finished: true
+	};
+	for(var i in Module['assetDownloadProgress']) {
+		aggregated.current += Module['assetDownloadProgress'][i].current;
+		aggregated.total += Module['assetDownloadProgress'][i].total;
+		aggregated.finished = aggregated.finished && Module['assetDownloadProgress'][i].finished;
+	}
+
+	aggregated.currentShow = formatBytes(aggregated.current);
+	aggregated.totalShow = formatBytes(aggregated.total);
+
+	if (aggregated.finished) taskFinished(TASK_DOWNLOADING);
+	else taskProgress(TASK_DOWNLOADING, aggregated);
+}
+
+function download(url, responseType) {
+	return new Promise(function(resolve, reject) {
+		var xhr = new XMLHttpRequest();
+		xhr.open('GET', url, true);
+		xhr.responseType = responseType || 'blob';
+		reportDownloadProgress(url, 0, 1);
+		xhr.onload = function() {
+			if (xhr.status == 0 || (xhr.status >= 200 && xhr.status < 300)) {
+				var len = xhr.response.size || xhr.response.byteLength;
+				reportDownloadProgress(url, len, len, true);
+				resolve(xhr.response);
+			} else {
+				taskFinished(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url);
+				reject({
+					status: xhr.status,
+					statusText: xhr.statusText
+				});
+			}
+		};
+		xhr.onprogress = function(p) {
+			if (p.lengthComputable) reportDownloadProgress(url, p.loaded, p.total);
+		};
+		xhr.onerror = function(e) {
+			var isFileProtocol = url.indexOf('file://') == 0 || location.protocol.indexOf('file') != -1;
+			if (isFileProtocol) taskFinished(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url +'<br>Try using a web server to avoid loading via a "file://" URL.'); // Convert the most common source of errors to a more friendly message format.
+			else taskFinished(TASK_DOWNLOADING, 'HTTP error ' + (xhr.status || 404) + ' ' + xhr.statusText + ' on file ' + url);
+			reject({
+				status: xhr.status || 404,
+				statusText: xhr.statusText
+			});
+		};
+		xhr.onreadystatechange = function() {
+			if (xhr.readyState >= xhr.HEADERS_RECEIVED) {
+				if (url.endsWith('gz') && (xhr.status == 0 || xhr.status == 200)) {
+					if (xhr.getResponseHeader('Content-Encoding') != 'gzip') {
+						// A fallback is to set serveCompressedAssets = false to serve uncompressed assets instead, but that is not really recommended for production use, since gzip compression shrinks
+						// download sizes so dramatically that omitting it for production is not a good idea.
+						taskFinished(TASK_DOWNLOADING, 'Downloaded a compressed file ' + url + ' without the necessary HTTP response header "Content-Encoding: gzip" specified!<br>Please configure gzip compression on this asset on the web server to serve gzipped assets!');
+						xhr.onload = xhr.onprogress = xhr.onerror = xhr.onreadystatechange = null; // Abandon tracking events from this XHR further.
+						xhr.abort();
+						return reject({
+							status: 406,
+							statusText: 'Not Acceptable'
+						});
+					}
+
+					// After enabling Content-Encoding: gzip, make sure that the appropriate MIME type is being used for the asset, i.e. the MIME
+					// type should be that of the uncompressed asset, and not the MIME type of the compression method that was used.
+					if (xhr.getResponseHeader('Content-Type').toLowerCase().indexOf('zip') != -1) {
+						function expectedMimeType(url) {
+							if (url.indexOf('.wasm') != -1) return 'application/wasm';
+							if (url.indexOf('.js') != -1) return 'application/javascript';
+							return 'application/octet-stream';
+						}
+						taskFinished(TASK_DOWNLOADING, 'Downloaded a compressed file ' + url + ' with incorrect HTTP response header "Content-Type: ' + xhr.getResponseHeader('Content-Type') + '"!<br>Please set the MIME type of the asset to "' + expectedMimeType(url) + '".');
+						xhr.onload = xhr.onprogress = xhr.onerror = xhr.onreadystatechange = null; // Abandon tracking events from this XHR further.
+						xhr.abort();
+						return reject({
+							status: 406,
+							statusText: 'Not Acceptable'
+						});
+					}
+				}
+			}
+		}
+		xhr.send(null);
+	});
+}
+
 function download(url, responseType) {
     return new Promise(function(resolve, reject) {
 
         var xhr = new XMLHttpRequest();
         xhr.open('GET', url, true);
         xhr.responseType = responseType || 'arraybuffer';
-
         xhr.onprogress = function(e) {
             if (e.lengthComputable) {
                 var percent = Math.floor((e.loaded / e.total) * 100);
@@ -550,7 +685,6 @@ function download(url, responseType) {
                 updateProgress(percent);
             }
         };
-
         xhr.onload = function() {
             if (xhr.status >= 200 && xhr.status < 300) {
                 updateProgress(100);
@@ -559,20 +693,64 @@ function download(url, responseType) {
                 reject(xhr.statusText);
             }
         };
-
         xhr.onerror = function() {
             reject("Download error");
         };
-
         xhr.send();
     });
 }
-function updateProgress(percent) {
-    var bar = document.getElementById("progressBar");
-    var text = document.getElementById("progress");
 
-    if (bar) bar.style.width = percent + "%";
+
+function updateProgress(percent) {
+    var text = document.getElementById("progress");
     if (text) text.innerText = percent + "%";
+}
+
+// ================================================================================
+// ================================================================================
+// UE4 DEFAULT UX TEMPLATE
+
+function showErrorDialog(errorText) {
+	var existingErrorDialog = document.getElementById('errorDialog');
+	if (existingErrorDialog) {
+		existingErrorDialog.innerHTML += '<br>' + errorText;
+	} else {
+console.log("Something went wrong");
+	}
+}
+
+
+// Given a blob, asynchronously reads the byte contents of that blob to an arraybuffer and returns it as a Promise.
+function readBlobToArrayBuffer(blob) {
+	return new Promise(function(resolve, reject) {
+		var fileReader = new FileReader();
+		fileReader.onload = function() { resolve(this.result); }
+		fileReader.onerror = function(e) { reject(e); }
+		fileReader.readAsArrayBuffer(blob);
+	});
+}
+
+function addScriptToDom(scriptCode) {
+	return new Promise(function(resolve, reject) {
+		var script = document.createElement('script');
+		var blob = (scriptCode instanceof Blob) ? scriptCode : new Blob([scriptCode], { type: 'text/javascript' });
+		var objectUrl = URL.createObjectURL(blob);
+		script.src = objectUrl;
+		script.onload = function() {
+			script.onload = script.onerror = null; // Remove these onload and onerror handlers, because these capture the inputs to the Promise and the input function, which would leak a lot of memory!
+			URL.revokeObjectURL(objectUrl); // Free up the blob. Note that for debugging purposes, this can be useful to comment out to be able to read the sources in debugger.
+			resolve();
+		}
+		script.onerror = function(e) {
+			script.onload = script.onerror = null; // Remove these onload and onerror handlers, because these capture the inputs to the Promise and the input function, which would leak a lot of memory!
+			URL.revokeObjectURL(objectUrl);
+			console.error('script failed to add to dom: ' + e);
+			console.error(scriptCode);
+			console.error(e);
+			reject(e.message || "(out of memory?)");
+		}
+		document.body.appendChild(script);
+	});
 }
 
 // ----------------------------------------
