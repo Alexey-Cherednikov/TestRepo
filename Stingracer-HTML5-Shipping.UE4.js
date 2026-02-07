@@ -1,5 +1,66 @@
-﻿
+﻿// ======== функция отключения звука и остановки игры на паузу ====================================================
+(function () {
+    const NativeAudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!NativeAudioContext) return;
 
+    let audioCtx = null;
+    let audioInitialized = false;
+
+    // Создание контекста ТОЛЬКО после user gesture
+    function initAudioContext() {
+        if (!audioInitialized) {
+            audioCtx = new NativeAudioContext();
+            audioInitialized = true;
+            console.log("AudioContext initialized after user gesture");
+            // Если UE уже загрузился — сразу резюмим
+            if (audioCtx.state === "suspended") {
+                audioCtx.resume().catch(err =>
+                    console.log("Resume error:", err)
+                );
+            }
+        }
+    }
+    // Первый пользовательский ввод активирует звук
+    document.addEventListener("click", initAudioContext, { once: true });
+    document.addEventListener("keydown", initAudioContext, { once: true });
+    document.addEventListener("touchstart", initAudioContext, { once: true });
+
+    // Перехватываем создание AudioContext внутри UE
+    window.AudioContext = function (...args) {
+        if (!audioCtx) {
+            initAudioContext();
+        }
+        return audioCtx;
+    };
+    // ==== Pause / Resume Game ====
+
+    function pauseGame() {
+        if (typeof Module !== "undefined" && Module.pauseMainLoop) {
+            Module.pauseMainLoop();
+        }
+        if (audioCtx && audioCtx.state === "running") {
+            audioCtx.suspend().catch(err =>
+                console.log("Suspend error:", err)
+            );
+        }
+    }
+    function resumeGame() {
+        if (typeof Module !== "undefined" && Module.resumeMainLoop) {
+            Module.resumeMainLoop();
+        }
+        if (audioCtx && audioCtx.state === "suspended") {
+            audioCtx.resume().catch(err =>
+                console.log("Resume error:", err)
+            );
+        }
+    }
+    document.addEventListener("visibilitychange", function () {
+        if (document.hidden) pauseGame();
+        else resumeGame();
+    });
+    window.pauseGame = pauseGame;
+    window.resumeGame = resumeGame;
+})();
 // ================================================================================
 // ================================================================================
 window.AudioContext = ( window.AudioContext || window.webkitAudioContext || null );
